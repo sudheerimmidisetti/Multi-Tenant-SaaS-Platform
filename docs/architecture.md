@@ -1,110 +1,122 @@
 # System Architecture Document
 
 **Project Name:** Multi-Tenant SaaS Project Management System  
-**Date:** October 26, 2025  
 **Version:** 1.0  
-**Author:** AWS Student / Lead Developer
+**Document Status:** Approved  
+**Author:** Lead Developer  
+**Last Updated:** October 26, 2025  
 
 ---
 
-## 1. System Architecture Design
+## 1️. Overview
 
-The system follows a **containerized three-tier web architecture** designed for modularity, scalability, and tenant isolation.  
-The entire stack is orchestrated using **Docker Compose**, ensuring environment consistency across development and production.
+The system adopts a **containerized three-tier web architecture** optimized for scalability, performance, and strict tenant isolation.  
+All components run in isolated Docker containers and communicate securely within a private Docker network, ensuring consistent deployments across environments.
 
----
-
-## High-Level Architecture Diagram
-```mermaid
-graph LR
-    User[Client Browser] --> Frontend[Frontend Container React Vite]
-    Frontend --> Backend[Backend Container Node Express]
-    Backend --> DB[(PostgreSQL Database)]
-
-    subgraph DockerNetwork
-        Frontend
-        Backend
-        DB
-    end
-
-    subgraph SecurityLayer
-        Backend --> JWT[JWT Authentication]
-        Backend --> RBAC[RBAC Middleware]
-    end
-```
-
-## System Architecture & Components
-
-The system follows a **multi-tenant, containerized architecture** with a clear separation between the **frontend**, **backend**, and **database** layers.
+Key architectural traits:
+- Modular separation of concerns
+- Stateless backend
+- Secure authentication and authorization
+- Logical tenant isolation
+- Production-ready deployment model
 
 ---
 
-## Components Description
+## 2. Architecture Style
 
-### Client Layer (Frontend)
+This system follows a **multi-tenant SaaS architecture** with a clear layering pattern:
 
-- **Technology:** React.js (Vite Build Tool)
-- **Container Port:** `3000 (External) → 3000 (Internal)`
-- **Responsibilities:**
-  - Renders the user interface
-  - Handles user interactions
-  - Manages authentication state (JWT storage)
-  - Communicates with the Backend API
-- **Multi-Tenancy:**
-  - Tenant context is identified via:
-    - Subdomain (e.g., `tenant1.app.com`), or
-    - Login form input
+- **Client Layer (Presentation)**
+- **Application Layer (Business Logic & APIs)**
+- **Data Layer (Persistent Storage)**
+
+Tenant isolation is enforced across application logic and database level using `tenant_id`.
 
 ---
 
-### Application Layer (Backend API)
-
-- **Technology:** Node.js, Express.js
-- **Container Port:** `5000 (External) → 5000 (Internal)`
-- **Responsibilities:**
-  - Business logic execution
-  - Authentication (JWT)
-  - Authorization (RBAC)
-  - Tenant isolation enforcement
-- **Isolation Mechanism:**
-  - Middleware extracts `tenant_id` from the JWT
-  - Injects `tenant_id` into the database query context
-  - Ensures strict tenant-level data isolation
+## 3. Component Architecture
 
 ---
 
-### Data Layer (Database)
+### Client Layer — Frontend
+
+- **Technology:** React (Vite)
+- **Container Port:** `3000 → 3000`
+- **Responsibilities**
+  - UI rendering
+  - User interaction management
+  - JWT based session handling
+  - API communication
+
+- **Tenant Context Handling**
+  - Subdomain-based identification (pattern: `<tenant>.app.com`) OR
+  - Explicit tenant selection at login
+
+---
+
+### Application Layer — Backend API
+
+- **Technology:** Node.js + Express
+- **Container Port:** `5000 → 5000`
+
+**Core Responsibilities**
+- Authentication (JWT)
+- Authorization (RBAC)
+- Business logic execution
+- Tenant isolation validation
+
+**Isolation Strategy**
+- Middleware extracts `tenant_id` from JWT
+- Injected into request context
+- Applied consistently in DB queries
+
+This ensures **no cross-tenant access** under any scenario.
+
+---
+
+### Data Layer — Database
 
 - **Technology:** PostgreSQL 15
-- **Container Port:** `5432 (External) → 5432 (Internal)`
-- **Responsibilities:**
-  - Persistent relational data storage
-- **Isolation Strategy:**
-  - **Shared Database, Shared Schema**
-  - Logical isolation using the `tenant_id` discriminator column
-  - `tenant_id` exists in all tenant-owned tables
+- **Container Port:** `5432 → 5432`
+
+**Responsibilities**
+- Persistent relational data storage
+- Transaction integrity
+- Query performance
+
+**Multi-Tenancy Strategy**
+- Shared Database
+- Shared Schema
+- Logical isolation using `tenant_id`
+
+Every tenant-owned entity contains:
+```
+tenant_id (UUID)
+```
+
+This enforces **strong logical partitioning**.
 
 ---
 
-## High-Level System Architecture (Mermaid)
+## 4. System View (Architecture Summary)
 
 ```mermaid
 graph LR
-    Client[Frontend<br/>React.js :3000] -->|HTTPS + JWT| API[Backend API<br/>Node.js :5000]
+    Client[React Frontend<br/>:3000] -->|HTTPS + JWT| API[Express Backend<br/>:5000]
+    API -->|SQL + tenant_id scope| DB[(PostgreSQL<br/>Shared DB)]
 
-    API -->|SQL Queries<br/>tenant_id enforced| DB[(PostgreSQL 15<br/>Shared DB)]
-
-    subgraph Multi-Tenant_Isolation [Multi-Tenant Isolation]
+    subgraph TenantIsolation [Multi-Tenant Enforcement]
         API
         DB
     end
 ```
 
-## Database Schema Design (ERD)
+---
 
-The database schema is normalized to **Third Normal Form (3NF)** to eliminate redundancy and ensure data integrity.
+## 5. Database Architecture (ERD)
 
-The `tenant_id` column acts as the **logical partition key** for multi-tenancy, enabling secure data isolation within a **shared database, shared schema** model.
+The schema is normalized to **3rd Normal Form (3NF)**.  
+`tenant_id` acts as the **logical partition key**.
 
 ```mermaid
 erDiagram
@@ -166,87 +178,54 @@ erDiagram
     }
 ```
 
-## Schema Details
-
-### `tenants` (Root Entity)
-- **Primary Key:** `id (UUID)`
-- **Data:**
-  - `name`
-  - `subdomain` (Unique)
-  - `status`
-  - `subscription_plan`
-- **Constraints:**
-  - `max_users`
-  - `max_projects`
-- **Isolation:**
-  - Root table (no `tenant_id` column)
-
 ---
 
-### `users`
-- **Primary Key:** `id (UUID)`
-- **Foreign Key:**
-  - `tenant_id → tenants.id` (`ON DELETE CASCADE`) **[ISOLATION KEY]**
-- **Data:**
-  - `email`
-  - `password_hash`
-  - `full_name`
-  - `role`
-- **Constraint:**
-  - `UNIQUE (tenant_id, email)`  
-    (Emails are unique per tenant)
+## 6. Schema Rules & Constraints
 
----
+### Tenants
+- Unique subdomain
+- Subscription tracking
+- Plan limits (`max_users`, `max_projects`)
 
-### `projects`
-- **Primary Key:** `id (UUID)`
-- **Foreign Keys:**
-  - `tenant_id → tenants.id` (`ON DELETE CASCADE`) **[ISOLATION KEY]**
-  - `created_by → users.id`
-- **Data:**
-  - `name`
-  - `description`
-  - `status`
-- **Index:**
+### Users
+- Scoped uniqueness:
+```
+UNIQUE(tenant_id, email)
+```
+- Secure password hashing
+- Role based access enforced
+
+### Projects
+- Tenant-scoped
+- Cascade delete behavior
+- Indexed for performance
+
 ```sql
-CREATE INDEX idx_projects_tenant ON projects(tenant_id);
+CREATE INDEX idx_projects_tenant 
+ON projects(tenant_id);
 ```
 
-### `tasks`
-- **Primary Key:** `id (UUID)`
-- **Foreign Keys:**
-  - `project_id → projects.id` (`ON DELETE CASCADE`)
-  - `tenant_id → tenants.id` **[ISOLATION KEY]**
-  - `assigned_to → users.id` (Nullable)
-- **Data:**
-  - `title`
-  - `priority`
-  - `status`
-  - `due_date`
-- **Index:**
+### Tasks
+- Bound to project + tenant
+- Optional assignee
+- Indexed for faster lookup
+
 ```sql
-CREATE INDEX idx_tasks_tenant ON tasks(tenant_id);
+CREATE INDEX idx_tasks_tenant 
+ON tasks(tenant_id);
 ```
 
-### `audit_logs`
-- **Primary Key:** `id (UUID)`
-- **Foreign Key:**
-  - `tenant_id → tenants.id` **[ISOLATION KEY]**
-- **Data:**
-  - `action`
-  - `entity_type`
-  - `entity_id`
-  - `ip_address`
+### Audit Logs
+- Tracks system actions
+- Helps debugging and audits
 
 ---
 
-## API Architecture
+## 8️. API Architecture
 
-The application exposes **19 RESTful endpoints** following standard REST principles.
+The backend exposes REST APIs following **consistent conventions**, secure authorization, and strict tenant scoping.
 
 ### Standard API Response Format
-
-All API responses follow a consistent structure:
 
 ```json
 {
@@ -256,46 +235,48 @@ All API responses follow a consistent structure:
 }
 ```
 
-### Module A: Authentication
+---
 
-| Method | Endpoint | Description | Authentication Required | Role |
-|-------:|----------|-------------|--------------------------|------|
-| POST | `/api/auth/register-tenant` | Register new organization and tenant admin | No | Public |
-| POST | `/api/auth/login` | Login and receive JWT | No | Public |
-| GET | `/api/auth/me` | Get current user context | Yes | Any |
-| POST | `/api/auth/logout` | Invalidate user session | Yes | Any |
+## 9️. API Modules
 
-### Module B: Tenant Management
+### Authentication
+- Register Tenant
+- Login
+- Get Profile
+- Logout
 
-| Method | Endpoint | Description | Authentication Required | Role |
-|-------:|----------|-------------|--------------------------|------|
-| GET | `/api/tenants` | List all tenants (System Admin) | Yes | `super_admin` |
-| GET | `/api/tenants/:tenantId` | Get specific tenant details | Yes | `super_admin` or `owner` |
-| PUT | `/api/tenants/:tenantId` | Update tenant settings or subscription | Yes | `super_admin` or `tenant_admin` |
+### Tenant Management
+- View tenants
+- Get tenant details
+- Update tenant
 
-### Module C: User Management
+### User Management
+- Create user
+- List users
+- Update user
+- Delete user
 
-| Method | Endpoint | Description | Authentication Required | Role |
-|-------:|----------|-------------|--------------------------|------|
-| POST | `/api/tenants/:tenantId/users` | Create a new user within a tenant | Yes | `tenant_admin` |
-| GET | `/api/tenants/:tenantId/users` | List all users in a tenant | Yes | Any tenant member |
-| PUT | `/api/users/:userId` | Update user profile or role | Yes | `tenant_admin` or Self |
-| DELETE | `/api/users/:userId` | Remove user from tenant | Yes | `tenant_admin` |
+### Project Management
+- Create
+- List
+- Update
+- Delete
 
-### Module D: Project Management
+### Task Management
+- Create
+- List
+- Update Status
+- Full Update
 
-| Method | Endpoint | Description | Authentication Required | Role |
-|-------:|----------|-------------|--------------------------|------|
-| POST | `/api/projects` | Create a new project | Yes | Any tenant member |
-| GET | `/api/projects` | List projects (scoped to tenant) | Yes | Any tenant member |
-| PUT | `/api/projects/:projectId` | Update project details | Yes | Creator or Admin |
-| DELETE | `/api/projects/:projectId` | Delete a project | Yes | Creator or Admin |
+---
 
-### Module E: Task Management
+## Summary
 
-| Method | Endpoint | Description | Authentication Required | Role |
-|-------:|----------|-------------|--------------------------|------|
-| POST | `/api/projects/:projectId/tasks` | Create a task within a project | Yes | Any tenant member |
-| GET | `/api/projects/:projectId/tasks` | List all tasks in a project | Yes | Any tenant member |
-| PATCH | `/api/tasks/:taskId/status` | Quickly update task status | Yes | Any tenant member |
-| PUT | `/api/tasks/:taskId` | Perform a full task update | Yes | Any tenant member |
+This architecture ensures:
+- High scalability
+- Strong tenant isolation
+- Secure authentication
+- Flexible future enhancements
+- Production-ready deployment pipeline
+
+---
