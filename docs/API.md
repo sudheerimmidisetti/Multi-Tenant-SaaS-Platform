@@ -1,27 +1,29 @@
-# Multi-Tenant SaaS Platform – API Documentation
+# Multi-Tenant SaaS Platform — API Documentation
 
 ## Authentication & Security
-
-- **Authentication Method:** Bearer Token (JWT)
+- **Auth Type:** Bearer Token (JWT)  
 - **Header Format:**  
   `Authorization: Bearer <your_jwt_token>`
-- **Token Expiry:** 24 hours
-- **Base URL (Local):**  
-  `http://localhost:5000/api`
+- **Token Expiry:** 24 Hours
+- **Base URL (Local):**
+  ```
+  http://localhost:5000/api
+  ```
 
 ---
 
-## System
+# 1️. System
 
-### 1. Health Check
+## Health Check
+Checks API server & database connectivity.
 
-Checks whether the API server and database connection are healthy.
+| Method | Endpoint |
+|--------|----------|
+| GET | `/health` |
 
-- **Endpoint:** `GET /health`
-- **Access:** Public
+**Access:** Public  
 
-#### Response (200 OK)
-
+**Response (200):**
 ```json
 {
   "status": "ok",
@@ -29,339 +31,363 @@ Checks whether the API server and database connection are healthy.
 }
 ```
 
-## 2. Authentication Module
+---
 
-### 2.1 Register Tenant (Sign Up)
+# 2️. Authentication Module
 
-Registers a new **Organization (Tenant)** along with its first **Admin user**.
+## 2.1 Register Tenant (Signup)
+Registers a **Tenant (Organization)** + first **Admin User**.
 
-- **Endpoint:** `POST /auth/register-tenant`
-- **Access:** Public
+| Method | Endpoint |
+|--------|----------|
+| POST | `/auth/register-tenant` |
 
-#### Request Body (JSON)
+**Access:** Public  
 
+### Request Body
 ```json
 {
-  "tenantName": "Acme Corp",
-  "subdomain": "acme",
-  "adminEmail": "admin@acme.com",
-  "password": "SecurePassword123"
+  "tenantName": "Orion Technologies",
+  "subdomain": "orion",
+  "adminEmail": "owner@oriontech.com",
+  "password": "StrongPass@789"
 }
+```
 
-#### Response (201 Created)
-
+### Response (201)
 ```json
 {
   "message": "Tenant registered successfully",
-  "tenantId": "uuid-string"
+  "tenantId": "b12c4e87-93fc-4a41-98a7-2fa7f86b2c51"
 }
 ```
 
-### 2.2 Login
+---
 
-Authenticates a user and returns a **JWT access token**.
+## 2.2 Login
+Authenticates user → returns JWT.
 
-- **Endpoint:** `POST /auth/login`
-- **Access:** Public
+| Method | Endpoint |
+|--------|----------|
+| POST | `/auth/login` |
 
-#### Request Body (JSON)
+**Access:** Public  
 
+### Request Body
 ```json
 {
-  "email": "admin@acme.com",
-  "password": "SecurePassword123"
+  "email": "owner@oriontech.com",
+  "password": "StrongPass@789"
 }
 ```
 
-#### Response (200 OK)
-
+### Response (200)
 ```json
 {
-  "token": "eyJhbGciOiJIUzI1NiIsIn...",
+  "token": "eyJhbGciOiJFUzI1NiIsImtp...",
   "user": {
-    "id": "uuid",
-    "email": "admin@acme.com",
+    "id": "f8742c21-ab90-4bde-b02f-92d8824cc199",
+    "email": "owner@oriontech.com",
     "role": "tenant_admin",
-    "tenantId": "uuid"
+    "tenantId": "b12c4e87-93fc-4a41-98a7-2fa7f86b2c51"
   }
 }
 ```
 
-### 2.3 Get Current User
+---
 
-Retrieves the profile of the currently logged-in user.
+## 2.3 Get Current User
+Returns logged-in user details.
 
-- **Endpoint:** `GET /auth/me`
-- **Access:** Protected (All Roles)
+| Method | Endpoint |
+|--------|----------|
+| GET | `/auth/me` |
 
-#### Response (200 OK)
+**Access:** Protected (All Roles)
 
+### Response (200)
 ```json
 {
   "user": {
-    "id": "uuid",
-    "fullName": "John Doe",
-    "email": "john@acme.com",
+    "id": "d2f4a5c7-4a51-4cd7-8b95-9c8fbb2137dd",
+    "fullName": "Daniel Carter",
+    "email": "daniel@oriontech.com",
     "role": "user"
   }
 }
 ```
 
-## 3️. Tenant Management (Super Admin)
+---
 
-### 3.1 List All Tenants
+# 3️. Tenant Management (Super Admin Only)
 
-Retrieves a list of all registered tenants.  
-Accessible only by **Super Admin** users.
+## 3.1 List All Tenants
+| Method | Endpoint |
+|--------|----------|
+| GET | `/tenants` |
 
-- **Endpoint:** `GET /tenants`
-- **Access:** Super Admin
+**Access:** Super Admin  
 
-#### Response (200 OK)
-
+### Response (200)
 ```json
 {
   "status": "success",
   "results": 2,
   "data": {
     "tenants": [
-      { "id": "1", "name": "Acme Corp", "subdomain": "acme" },
-      { "id": "2", "name": "Beta Inc", "subdomain": "beta" }
+      { "id": "t-101", "name": "Orion Technologies", "subdomain": "orion" },
+      { "id": "t-102", "name": "Nova Systems", "subdomain": "nova" }
     ]
   }
 }
 ```
 
-### 3.2 Get Tenant Details
+---
 
-Retrieves detailed information for a specific tenant.
+## 3.2 Get Tenant Details
+| Method | Endpoint |
+|--------|----------|
+| GET | `/tenants/:id` |
 
-- **Endpoint:** `GET /tenants/:id`
-- **Access:** Super Admin
+**Access:** Super Admin  
 
-#### Response (200 OK)
-
+### Response (200)
 ```json
 {
-  "id": "uuid",
-  "name": "Acme Corp",
+  "id": "b12c4e87-93fc-4a41-98a7-2fa7f86b2c51",
+  "name": "Orion Technologies",
   "status": "active"
 }
 ```
 
-### 3.3 Update Tenant
+---
 
-Updates tenant details such as name or status.
+## 3.3 Update Tenant
+| Method | Endpoint |
+|--------|----------|
+| PUT | `/tenants/:id` |
 
-- **Endpoint:** `PUT /tenants/:id`
-- **Access:** Super Admin
+**Access:** Super Admin  
 
-#### Request Body (JSON)
-
+### Request Body
 ```json
 {
-  "name": "Acme Global",
+  "name": "Orion Global Solutions",
   "status": "inactive"
 }
 ```
 
-## 4️. User Management (Tenant Admin)
+---
 
-### 4.1 List Users
+# 4️. User Management (Tenant Admin)
 
-Lists all employees within the requester’s tenant.
+## 4.1 List Users
+| Method | Endpoint |
+|--------|----------|
+| GET | `/tenants/:tenantId/users` |
 
-- **Endpoint:** `GET /tenants/:tenantId/users`
-- **Access:** Tenant Admin
+**Access:** Tenant Admin  
 
-#### Response (200 OK)
-
+### Response (200)
 ```json
 {
   "data": {
     "users": [
-      { "id": "u1", "fullName": "Alice", "role": "user" }
+      { "id": "u-301", "fullName": "Sophia Miller", "role": "user" }
     ]
   }
 }
 ```
 
-### 4.2 Create User
+---
 
-Adds a new employee to the tenant.
+## 4.2 Create User
+| Method | Endpoint |
+|--------|----------|
+| POST | `/tenants/:tenantId/users` |
 
-- **Endpoint:** `POST /tenants/:tenantId/users`
-- **Access:** Tenant Admin
+**Access:** Tenant Admin  
 
-#### Request Body (JSON)
-
+### Request Body
 ```json
 {
-  "email": "alice@acme.com",
-  "password": "Password123",
-  "fullName": "Alice Smith",
+  "email": "sophia@oriontech.com",
+  "password": "UserPass@456",
+  "fullName": "Sophia Miller",
   "role": "user"
 }
 ```
 
-### 4.3 Update User
+---
 
-Updates an existing user’s profile or role.
+## 4.3 Update User
+| Method | Endpoint |
+|--------|----------|
+| PUT | `/users/:id` |
 
-- **Endpoint:** `PUT /users/:id`
-- **Access:** Tenant Admin
+**Access:** Tenant Admin  
 
-#### Request Body (JSON)
-
+### Request Body
 ```json
 {
-  "fullName": "Alice Jones",
+  "fullName": "Sophia Wilson",
   "role": "tenant_admin"
 }
 ```
 
-### 4.4 Delete User
+---
 
-Removes a user from the tenant.
+## 4.4 Delete User
+| Method | Endpoint |
+|--------|----------|
+| DELETE | `/users/:id` |
 
-- **Endpoint:** `DELETE /users/:id`
-- **Access:** Tenant Admin
+**Access:** Tenant Admin  
 
 ---
 
-## 5️. Project Management
+# 5️. Project Management
 
-### 5.1 List Projects
+## 5.1 List Projects
+| Method | Endpoint |
+|--------|----------|
+| GET | `/projects` |
 
-Lists all projects belonging to the requester’s tenant.
+**Access:** User / Admin  
 
-- **Endpoint:** `GET /projects`
-- **Access:** User / Admin
-
-#### Response (200 OK)
-
+### Response (200)
 ```json
 {
   "data": {
     "projects": [
-      { "id": "p1", "title": "Website Redesign", "status": "active" }
+      { "id": "pr-501", "title": "Mobile App Launch", "status": "active" }
     ]
   }
 }
 ```
 
-### 5.2 Create Project
+---
 
-Creates a new project within the tenant.
+## 5.2 Create Project
+| Method | Endpoint |
+|--------|----------|
+| POST | `/projects` |
 
-- **Endpoint:** `POST /projects`
-- **Access:** Admin
+**Access:** Admin  
 
-#### Request Body (JSON)
-
+### Request Body
 ```json
 {
-  "title": "Q3 Marketing Campaign",
-  "description": "Planning for Q3",
+  "title": "Enterprise Dashboard Revamp",
+  "description": "UI/UX overhaul for enterprise clients",
   "status": "active"
 }
 ```
 
-### 5.3 Get Project Details
+---
 
-Retrieves detailed information for a specific project.
+## 5.3 Get Project Details
+| Method | Endpoint |
+|--------|----------|
+| GET | `/projects/:id` |
 
-- **Endpoint:** `GET /projects/:id`
-- **Access:** User / Admin
+**Access:** User / Admin  
 
 ---
 
-### 5.4 Update Project
+## 5.4 Update Project
+| Method | Endpoint |
+|--------|----------|
+| PUT | `/projects/:id` |
 
-Updates an existing project’s details.
+**Access:** Admin  
 
-- **Endpoint:** `PUT /projects/:id`
-- **Access:** Admin
-
-#### Request Body (JSON)
-
+### Request Body
 ```json
 {
   "status": "completed"
 }
 ```
 
-> **Note:**  
-> Project deletion functionality is typically mapped to  
-> `DELETE /projects/:id`
-
 ---
 
-## 6️. Task Management
+# 6️. Task Management
 
-### 6.1 List Tasks
+## 6.1 List Tasks
+| Method | Endpoint |
+|--------|----------|
+| GET | `/projects/:projectId/tasks` |
 
-Retrieves all tasks associated with a specific project.
+**Access:** User / Admin  
 
-- **Endpoint:** `GET /projects/:projectId/tasks`
-- **Access:** User / Admin
-
-#### Response (200 OK)
-
+### Response (200)
 ```json
 {
   "data": {
     "tasks": [
-      { "id": "t1", "title": "Draft content", "status": "TODO" }
+      { "id": "ts-801", "title": "Implement Login UI", "status": "TODO" }
     ]
   }
 }
 ```
 
-### 6.2 Create Task
+---
 
-Creates a new task within a specific project.
+## 6.2 Create Task
+| Method | Endpoint |
+|--------|----------|
+| POST | `/projects/:projectId/tasks` |
 
-- **Endpoint:** `POST /projects/:projectId/tasks`
-- **Access:** Admin
+**Access:** Admin  
 
-#### Request Body (JSON)
-
+### Request Body
 ```json
 {
-  "title": "Fix Header Bug",
-  "description": "CSS issue on mobile",
+  "title": "Fix Navigation Bug",
+  "description": "Navbar alignment issue in mobile view",
   "priority": "HIGH",
-  "dueDate": "2023-12-31"
+  "dueDate": "2025-05-30"
 }
 ```
 
-### 6.3 Update Task Status
+---
 
-Quickly update a task’s status (e.g., via Kanban drag-and-drop).
+## 6.3 Update Task Status
+| Method | Endpoint |
+|--------|----------|
+| PATCH | `/tasks/:id/status` |
 
-- **Endpoint:** `PATCH /tasks/:id/status`
-- **Access:** User / Admin
+**Access:** User / Admin  
 
-#### Request Body (JSON)
-
+### Request Body
 ```json
 {
   "status": "IN_PROGRESS"
 }
 ```
 
-### 6.4 Update Task Details
+---
 
-Performs a full update of a task’s information.
+## 6.4 Update Task Details
+| Method | Endpoint |
+|--------|----------|
+| PUT | `/tasks/:id` |
 
-- **Endpoint:** `PUT /tasks/:id`
-- **Access:** Admin
+**Access:** Admin  
 
-#### Request Body (JSON)
-
+### Request Body
 ```json
 {
-  "title": "Fix Header Bug (Updated)",
+  "title": "Fix Navigation Bug (Updated)",
   "priority": "MEDIUM"
 }
+```
+
+---
+
+## Notes
+- All protected routes require JWT
+- Tenant isolation enforced automatically
+- RBAC rules strictly applied
+
+---
