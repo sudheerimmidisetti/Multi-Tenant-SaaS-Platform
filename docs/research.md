@@ -1,304 +1,318 @@
-# Research Document: Multi-Tenant SaaS Platform Architecture
+# Research Study: Architecture Strategy for a Multi-Tenant SaaS Platform
 
-**Project Name:** Multi-Tenant SaaS Project Management System  
-**Date:** October 26, 2025  
-**Author:** AWS Student / Lead Developer  
-**Status:** Approved for Implementation  
-
----
-
-## 1. Multi-Tenancy Architecture Analysis
-
-Multi-tenancy is the architectural capability of a single instance of software to serve multiple distinct user groups, known as **tenants**. In a SaaS context, this means one codebase serving many customer organizations simultaneously.
-
-The most critical architectural decision in building a SaaS platform is the **database design strategy**, as it directly impacts scalability, isolation, maintenance complexity, and cost.
-
-Below is a detailed analysis of the three primary approaches considered.
+**Platform:** Multi-Tenant SaaS Project Management System  
+**Prepared By:** Lead Architect  
+**Approval Status:** Ready for Implementation  
+**Last Revision:** October 26, 2025  
 
 ---
 
-### A. Shared Database, Shared Schema (Discriminator Column)
+## Executive Overview
 
-Also known as the **Pool Model**.  
-All tenants share the same database and schema. Data isolation is achieved using a discriminator column such as `tenant_id`.
+A successful SaaS platform must securely and efficiently serve multiple independent organizations (tenants) from a single system.  
+Therefore, the **core architectural decision centers on multi-tenant database design**, as it impacts:
 
-**Mechanism**
-- Every table includes a `tenant_id`
-- Every query includes `WHERE tenant_id = ?`
-- Isolation is enforced at the application layer
+- Security & compliance
+- Cost efficiency
+- Operational complexity
+- Scale behavior
+- Developer velocity
 
-**Pros**
-- Lowest infrastructure cost
+This research explores multiple architectural alternatives, evaluates their trade-offs, and presents a justified final selection.
+
+---
+
+# 1. Evaluating Multi-Tenancy Database Models
+
+Three mainstream architectural strategies were studied to determine the most suitable approach for this platform.
+
+---
+
+## Option A — Shared Database + Shared Schema  
+*(Discriminator Column Strategy)*
+
+**Concept Summary**  
+All tenants share one database and one schema. Tenant isolation is enforced logically using a dedicated column such as `tenant_id`.
+
+**How It Works**
+- Each tenant-owned table includes `tenant_id`
+- Queries always scope data:
+  ```
+  WHERE tenant_id = ?
+  ```
+- Enforcement handled at application middleware level
+
+**Strength Areas**
+- Minimal hosting cost
 - Instant tenant onboarding
-- Simple DevOps (single DB)
-- Easy cross-tenant analytics
+- Simple DevOps lifecycle
+- Enables unified reporting
 
-**Cons**
-- High risk of data leaks if a query misses `tenant_id`
-- Difficult per-tenant backups
-- Noisy-neighbor performance risk
-
----
-
-### B. Shared Database, Separate Schemas (Schema-per-Tenant)
-
-Also known as the **Bridge Model**.  
-Each tenant gets a dedicated schema (`tenant_a.users`, `tenant_b.users`).
-
-**Mechanism**
-- Database search path is set dynamically per request
-- Queries are schema-isolated automatically
-
-**Pros**
-- Stronger isolation than shared schema
-- Easier per-tenant backups
-- Possible tenant-level customization
-
-**Cons**
-- Migration complexity grows linearly with tenants
-- Schema catalog bloat
-- Slower deployments at scale
+**Risk Areas**
+- Any missing `tenant_id` in queries may cause leaks
+- Per-tenant backup not straightforward
+- Possible noisy-neighbor performance impact
 
 ---
 
-### C. Separate Databases (Database-per-Tenant)
+## Option B — Shared Database + Separate Schemas  
+*(Schema-Per-Tenant)*
 
-Also known as the **Silo Model**.  
-Each tenant has a fully isolated database.
+**Concept Summary**  
+One database; each tenant assigned its own schema.
 
-**Mechanism**
-- A catalog/router maps tenants to database connections
+**How It Works**
+- Schema per tenant (ex: `tenant_a.users`)
+- Runtime dynamically switches execution schema
 
-**Pros**
-- Maximum security and isolation
-- No noisy-neighbor effect
-- Ideal for regulated industries
+**Strength Areas**
+- Stronger isolation vs shared schema
+- Easier tenant exports/backups
+- Customization capability
 
-**Cons**
-- Extremely high cost
-- Complex DevOps
-- Poor fit for freemium SaaS
-
----
-
-### Comparison Summary
-
-| Feature | Shared Schema | Separate Schema | Separate Database |
-|------|---------------|-----------------|------------------|
-| Isolation | Low | Medium | High |
-| Cost Efficiency | High | Medium | Low |
-| Onboarding Speed | Instant | Fast | Slow |
-| DevOps Effort | Low | Medium | High |
-| Data Leak Risk | High | Medium | Very Low |
-| Maintenance | Easy | Hard | Very Hard |
-| Scalability | Vertical | Vertical | Horizontal |
+**Risk Areas**
+- Migration complexity grows rapidly
+- Database metadata bloat
+- Releases slower at scale
 
 ---
 
-### Chosen Approach: Shared Database + Shared Schema
+## Option C — Independent Database Per Tenant  
+*(Silo Model)*
 
-**Justification**
+**Concept Summary**  
+Each tenant receives a dedicated database instance.
 
-1. **MVP Scope**  
-   Focuses development effort on core SaaS features instead of infrastructure orchestration.
+**How It Works**
+- Router maps tenant → database connection
 
-2. **ORM Compatibility (Prisma)**  
-   Prisma works best with a single schema and discriminator pattern.
+**Strength Areas**
+- Maximum isolation
+- Zero noisy-neighbor effects
+- Suitable for highly regulated industries
 
-3. **Dockerized Evaluation**  
-   Works cleanly with Docker Compose and one-command deployment.
-
-4. **Risk Mitigation**  
-   Tenant isolation is enforced via middleware that injects `tenant_id` automatically, eliminating developer error.
-
----
-
-## 2. Technology Stack Justification
-
-### Backend: Node.js + Express
-
-**Why**
-- Non-blocking I/O for high concurrency
-- Middleware-driven tenant isolation
-- Single language across stack
-
-**Rejected**
-- Django (sync & rigid ORM)
-- Spring Boot (heavy runtime)
+**Risk Areas**
+- Highest cost
+- Most DevOps effort
+- Slowest onboarding
+- Harder system-wide analytics
 
 ---
 
-### Frontend: React (Vite)
+# 2️. Comparative Evaluation
 
-**Why**
-- Component reusability
-- Fast re-rendering via Virtual DOM
-- Rich ecosystem (Router, Axios)
-
-**Rejected**
-- Angular (steep learning curve)
-
----
-
-### Database: PostgreSQL
-
-**Why**
-- Strong relational integrity
-- Cascade deletes
-- JSONB flexibility
-- Future-ready with Row-Level Security
-
-**Rejected**
-- MongoDB (weak relational guarantees)
+| Evaluation Factor | Shared Schema | Separate Schema | Separate DB |
+|------------------|--------------|-----------------|-------------|
+| Security Isolation | Low | Medium | Very High |
+| Cost Efficiency | Excellent | Good | Poor |
+| Tenant Onboarding | Instant | Fast | Slow |
+| DevOps Overhead | Minimal | Moderate | Heavy |
+| Risk of Data Leak | Higher | Reduced | Minimal |
+| Maintenance Complexity | Low | High | Very High |
+| Scalability Direction | Vertical | Vertical | Horizontal |
 
 ---
 
-### Authentication: JWT
+# 3️. Final Architectural Decision
 
-**Why**
+### **Selected Model**
+### ➝ Shared Database + Shared Schema
+
+---
+
+## Why This Model Was Chosen
+
+### Perfect Fit for Product Phase (MVP → Growth)
+Focuses engineering effort on business value instead of infrastructure overhead.
+
+### Aligned with Prisma ORM Strength
+Works naturally with discriminator-based isolation strategies.
+
+### Deployment Friendly
+Seamlessly fits containerized (`docker-compose`) deployment philosophy.
+
+### Risk-Controlled
+Mitigation approach:
+- Central middleware injects `tenant_id`
+- Prevents developer slip-ups
+- Ensures consistent isolation rules
+
+---
+
+# 4️. Technology Strategy Rationale
+
+---
+
+## Backend Layer — Node.js + Express
+**Benefits**
+- High concurrency
+- Lightweight and fast
+- Middleware architecture ideal for tenant enforcement
+
+**Alternatives Rejected**
+- Django → synchronous, rigid ORM
+- Spring Boot → heavy and complex for MVP
+
+---
+
+## Frontend Layer — React + Vite
+**Benefits**
+- Modern SPA experience
+- High performance builds
+- Mature ecosystem
+
+**Alternative Rejected**
+- Angular → larger learning and architecture overhead
+
+---
+
+## Database Layer — PostgreSQL
+**Benefits**
+- Strong relational guarantees
+- Transaction integrity
+- Cascade operations
+- JSONB hybrid flexibility
+- Future-ready for Row Level Security
+
+**Alternative Rejected**
+- MongoDB → inadequate relational discipline
+
+---
+
+## Authentication Strategy — JWT
+**Benefits**
 - Stateless scalability
-- Works across subdomains
-- No shared session store required
+- Subdomain compatibility
+- No centralized session storage
 
-**Rejected**
-- Server-side sessions (Redis dependency)
-
----
-
-### Deployment: Docker & Docker Compose
-
-**Why**
-- Environment parity
-- One-command deployment
-- Simple service orchestration
+**Alternative Rejected**
+- Server-managed sessions (Redis dependency)
 
 ---
 
-## 3. Security Considerations
-
-### Measure 1: Middleware-Based Tenant Isolation
-
-- JWT is validated on every request
-- `tenant_id` is injected server-side
-- Controllers never trust client-supplied tenant identifiers
+## Deployment Strategy — Docker + Compose
+**Benefits**
+- Consistent environments
+- Simple networking
+- One-command lifecycle
 
 ---
 
-### Measure 2: Secure Password Storage
-
-- Passwords hashed with **Bcrypt**
-- Salt rounds ≥ 10
-- Defends against rainbow table attacks
+# 5️. Security & Compliance Strategy
 
 ---
 
-### Measure 3: Role-Based Access Control (RBAC)
-
-| Role | Capabilities |
-|----|-------------|
-| Super Admin | Global access |
-| Tenant Admin | Full tenant control |
-| User | Limited access |
-
-Route guards enforce permissions before DB access.
+## Tenant Isolation Control
+- Every API request validated
+- JWT decoded
+- System injects trusted tenant id
+- Client input never trusted
 
 ---
 
-### Measure 4: API Hardening
-
-- Strict CORS rules
-- Rate limiting for login
-- Helmet security headers
+## Credential Protection
+- Bcrypt hashing
+- Secure salt rounds standard
+- Prevents rainbow-table attacks
 
 ---
 
-### Measure 5: Input Validation & ORM Safety
+## RBAC Security Model
 
-- Input validated using schemas
+| Role | Access Scope |
+|------|--------------|
+| Super Admin | Global system |
+| Tenant Admin | Organization workspace |
+| User | Restricted operational access |
+
+Execution is **blocked before DB processing**, ensuring least-privilege enforcement.
+
+---
+
+## API Protection Measures
+- Strict CORS
+- Login rate limiting
+- Security headers
+
+---
+
+## Validation & Query Defense
+- Strong payload validation
 - Prisma parameterized queries
-- Eliminates SQL Injection risk
+- SQL injection safe
 
 ---
 
-### Data Isolation Strategy (Row-Level Pattern)
+# 6️. Tenant Data Isolation Enforcement Pattern
 
-- `tenant_id` present in all tenant-owned tables
-- Queries always scoped:
-  ```sql
-  SELECT * FROM tasks
-  WHERE id = :taskId
-  AND tenant_id = :jwtTenantId;
+```sql
+SELECT *
+FROM tasks
+WHERE id = :taskId
+AND tenant_id = :jwtTenantId;
 ```
 
-Unauthorized access returns **404 Not Found**, making foreign tenant data completely invisible to the requester.
+If the tenant does not match → system responds:
+```
+404 Not Found
+```
+
+Result: zero visibility of foreign tenant data.
 
 ---
 
-## Authentication & Authorization Flow
+# 7️. Identity & Authorization Flow — Conceptual Summary
 
-1. **User Login**  
-   The user logs in using their credentials along with the tenant subdomain.
-
-2. **Tenant & User Validation**  
-   The backend resolves the tenant using the subdomain and validates the user credentials within that tenant.
-
-3. **JWT Issuance**  
-   Upon successful authentication, the backend issues a signed JWT containing:
-   ```json
-   {
-     "userId": "<uuid>",
-     "tenantId": "<uuid>",
-     "role": "<role>"
-   }
+1️. User logs in  
+2️. Tenant verified  
+3️. JWT issued containing:
 ```
-
-4. **Authenticated Request**
-
-The client includes the JWT in the `Authorization` header for all subsequent protected API requests:
-
-```bash
-Authorization: Bearer <token>
+userId
+tenantId
+role
 ```
-
-5. **Token Validation**
-
-Authentication middleware verifies the JWT signature and decodes the payload using the server’s secret key.  
-If the token is valid, the extracted claims are attached to the request context for downstream processing.
+4️. Client attaches JWT per request  
+5️. Authentication middleware validates token  
+6️. RBAC verifies access  
+7️. Database executes tenant-scoped query
 
 ---
 
-6. **Authorization (RBAC)**
-
-Role-Based Access Control (RBAC) guards evaluate the user’s role embedded in the JWT and determine whether access to the requested route is permitted.
-
-- Authorization checks are executed **before** any business logic runs
-- Unauthorized requests are blocked early
-- Ensures strict least-privilege access across the system
+## Interaction Flow Diagram
 
 ```mermaid
 sequenceDiagram
     autonumber
-    participant User as Client (Browser / App)
-    participant API as Backend API (Express)
-    participant Auth as Auth Middleware
-    participant RBAC as RBAC Guard
-    participant DB as PostgreSQL
+    participant User
+    participant API
+    participant Auth
+    participant RBAC
+    participant DB
 
-    User->>API: POST /auth/login (credentials + subdomain)
-    API->>DB: Find tenant by subdomain
-    API->>DB: Find user in tenant
-    API->>API: Compare password (Bcrypt)
+    User->>API: POST /projects (Create Project Request)
+    API->>Auth: Validate JWT
+    Auth-->>API: Token Verified
 
-    API-->>User: JWT issued { userId, tenantId, role }
+    API->>RBAC: Check if user is allowed to create project
+    RBAC-->>API: Permission Granted
 
-    User->>API: Request with Authorization: Bearer JWT
-    API->>Auth: Verify JWT signature
-    Auth-->>API: Token valid, payload attached
+    API->>DB: Insert Project (tenant_id enforced)
+    DB-->>API: Project Created
 
-    API->>RBAC: Check role permissions
-    RBAC-->>API: Access granted
-
-    API->>DB: Execute query (tenant_id enforced)
-    DB-->>API: Return scoped data
-    API-->>User: 200 OK (response)
+    API-->>User: 201 Created (Project Details Returned)
 ```
+
+---
+
+# Final Research Conclusion
+
+The research confirms:
+
+-  The **Shared Database + Shared Schema** model is optimal for current lifecycle
+-  Provides best balance of cost, agility, and performance
+-  Security risks are controllable via middleware enforcement
+-  Platform remains future scalable
+
+Therefore:
+
+> **Proceed with selected architecture and implementation strategy**
