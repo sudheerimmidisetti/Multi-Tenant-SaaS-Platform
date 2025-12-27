@@ -1,156 +1,182 @@
 # Product Requirements Document (PRD)
 
 **Project Name:** Multi-Tenant SaaS Project Management System  
-**Date:** October 26, 2025  
-**Version:** 1.0  
-**Status:** Approved for Development  
+**Document Version:** 1.0  
+**Document Status:** Approved for Development  
+**Last Updated:** October 26, 2025  
 
 ---
 
 ## 1️. User Personas
 
-This section defines the three primary user roles interacting with the system. Understanding these personas ensures the application meets the distinct needs of system administrators, customer organizations, and end users.
+The following personas represent the primary users of the system. Designing around these roles ensures the product delivers business value across platform ownership, tenant administration, and day-to-day user productivity.
 
 ---
 
-### Persona 1: Super Admin (System Owner)
+### Persona 1 — Super Admin (Platform Owner)
 
-**Role Description:**  
-The system-level administrator who owns and manages the SaaS platform. This user does not belong to any tenant but oversees the entire ecosystem.
+**Description**  
+A system-level administrator responsible for managing and maintaining the entire SaaS ecosystem. This user operates outside any tenant boundary.
 
-**Key Responsibilities:**
-- Monitor system health and tenant usage statistics
-- Manage tenant subscriptions (upgrade/downgrade plans)
-- Suspend or ban non-compliant tenants
-- Onboard large enterprise clients manually if required
+**Key Responsibilities**
+- Monitor platform performance, uptime, and tenant usage
+- Manage subscription plans and tenant lifecycle (upgrade / downgrade / suspend)
+- Enforce compliance and security policies
+- Handle onboarding of enterprise-scale organizations when necessary
 
-**Main Goals:**
-- Ensure platform stability and profitability
-- Maximize active, paying tenants
-- Prevent system abuse (spam tenants)
+**Primary Goals**
+- Maintain platform stability and profitability
+- Maximize the number of active, paid tenants
+- Prevent platform abuse and fraudulent tenant registrations
 
-**Pain Points:**
-- “I have no visibility into which tenants are consuming the most resources.”
-- “It's difficult to track global user growth across all organizations.”
-- “Manually updating a tenant's plan in the database is risky and slow.”
+**Pain Points**
+- “I need better visibility into which tenants are consuming the most resources.”
+- “Tracking global growth metrics across tenants is difficult.”
+- “Manual subscription changes in the database are risky and inefficient.”
 
 ---
 
-### Persona 2: Tenant Admin (Organization Manager)
+### Persona 2 — Tenant Admin (Organization Manager)
 
-**Role Description:**  
-Administrator for a specific tenant organization. Responsible for managing the company’s workspace and users.
+**Description**  
+The administrator of a specific organization using the platform.
 
-**Key Responsibilities:**
-- Configure organization details (name, branding)
-- Invite and manage team members
+**Key Responsibilities**
+- Configure organization profile and branding
+- Invite, manage, and remove users
 - Assign roles and permissions
-- Oversee all projects and tasks within the tenant
+- Oversee projects and tasks across the tenant
 
-**Main Goals:**
-- Organize team workflows efficiently
-- Maintain strong data security
-- Avoid unexpectedly hitting subscription limits
+**Primary Goals**
+- Maintain organized workflows
+- Ensure data privacy and security
+- Avoid unexpected subscription limitations
 
-**Pain Points:**
-- “I can't easily see what my team is working on.”
-- “Onboarding new employees takes too long.”
-- “I worry about former employees retaining access to company data.”
+**Pain Points**
+- “I can’t easily see what my team is working on at a glance.”
+- “User onboarding takes too much time.”
+- “I worry that former employees may retain unauthorized access.”
 
 ---
 
-### Persona 3: End User (Team Member)
+### Persona 3 — End User (Team Member)
 
-**Role Description:**  
-A regular employee who uses the system daily to complete assigned work.
+**Description**  
+A regular user who uses the platform daily to manage work and collaborate.
 
-**Key Responsibilities:**
-- Create and update tasks
+**Key Responsibilities**
+- Create and manage tasks
 - Collaborate on projects
-- Track deadlines and progress
-- Report status to managers
+- Track progress and deadlines
+- Communicate task status
 
-**Main Goals:**
-- Complete tasks on time
-- Understand work priorities clearly
-- Minimize administrative overhead
+**Primary Goals**
+- Complete assigned work efficiently
+- Clearly understand task priorities
+- Avoid unnecessary complexity
 
-**Pain Points:**
-- “I’m overwhelmed by cluttered interfaces; I just need to see my tasks.”
-- “I miss deadlines because I didn’t notice the due date.”
-- “It’s frustrating when I can’t find the project document I need.”
+**Pain Points**
+- “Interfaces feel cluttered; I just want to see relevant tasks.”
+- “I sometimes miss deadlines due to poor visibility.”
+- “Finding necessary project assets can be frustrating.”
 
 ---
 
 ## 2️. Functional Requirements
 
-These requirements define the expected behavior and capabilities of the system.
+These define **what the system must do** and describe expected platform behavior.
 
 ---
 
 ### Module: Authentication & Authorization
 
-- **FR-001:** Allow new organizations to register as tenants with an organization name, unique subdomain, and admin credentials
-- **FR-002:** Support stateless authentication using JWT with a validity period of 24 hours
-- **FR-003:** Enforce RBAC with three roles: `super_admin`, `tenant_admin`, and `user`
-- **FR-004:** Prevent cross-tenant data access by validating `tenant_id` on every API request
-- **FR-005:** Provide a logout function that invalidates the session on the client side
+- **FR-001:** Allow new organizations to register with:
+  - Organization Name
+  - Unique Subdomain (pattern: `<tenant-identifier>`)
+  - Admin Credentials
+- **FR-002:** Implement JWT-based authentication with standard expiry duration (pattern: `<24-hour-window>`)
+- **FR-003:** Enforce RBAC supporting roles:
+  - `super_admin`
+  - `tenant_admin`
+  - `user`
+- **FR-004:** Enforce strict multi-tenancy by validating `tenant_id` on every protected request
+- **FR-005:** Provide client-side logout functionality
 
 ---
 
 ### Module: Tenant Management
 
-- **FR-006:** Automatically assign a **Free** plan to new tenants (5 users, 3 projects)
-- **FR-007:** Allow Super Admins to view a paginated list of all tenants
+- **FR-006:** Assign newly registered tenants a default **Free Plan**  
+  *(pattern: `<max-users-limit>`, `<max-projects-limit>`)*
+- **FR-007:** Allow Super Admins to view a paginated tenant list
 - **FR-008:** Allow Super Admins to update tenant status and subscription plan
-- **FR-009:** Enforce subscription limits immediately upon resource creation
+- **FR-009:** Enforce subscription limits during resource creation
 
 ---
 
 ### Module: User Management
 
-- **FR-010:** Allow Tenant Admins to create users within subscription limits
-- **FR-011:** Ensure email uniqueness within a tenant scope
-- **FR-012:** Allow Tenant Admins to deactivate users and revoke access immediately
-- **FR-013:** Allow users to view their profile but restrict role changes
+- **FR-010:** Allow Tenant Admins to create users within plan limits
+- **FR-011:** Enforce email uniqueness within tenant scope (pattern: `<unique-per-tenant>`)
+- **FR-012:** Allow Tenant Admins to deactivate users instantly
+- **FR-013:** Allow users to view their own profiles; restrict role modification
 
 ---
 
 ### Module: Project Management
 
-- **FR-014:** Allow creation of projects with name, description, and status
-- **FR-015:** Provide a dashboard listing all tenant projects with task statistics
-- **FR-016:** Allow deletion of projects with cascade deletion of tasks
+- **FR-014:** Allow creation of projects with:
+  - Name
+  - Description
+  - Status
+- **FR-015:** Provide a project dashboard summarizing task activity
+- **FR-016:** Allow project deletion with automatic task cleanup (cascade behavior)
 
 ---
 
 ### Module: Task Management
 
-- **FR-017:** Allow task creation with title, description, priority, and due date
-- **FR-018:** Allow tasks to be assigned to users within the same tenant
-- **FR-019:** Allow task status updates via a dedicated endpoint
-- **FR-020:** Support task filtering by status, priority, and assignee
+- **FR-017:** Allow creation of tasks with:
+  - Title
+  - Description
+  - Priority
+  - Due Date
+- **FR-018:** Allow assignment of tasks to users within the same tenant
+- **FR-019:** Provide dedicated endpoint for updating task status
+- **FR-020:** Support task filtering by:
+  - Status
+  - Priority
+  - Assignee
 
 ---
 
 ## 3️. Non-Functional Requirements
 
-These requirements define quality attributes such as performance, security, and scalability.
+These define **quality attributes** of the system such as performance, security, and reliability.
 
-- **NFR-001 (Performance):**  
-  95% of API requests must respond within 200ms under 100 concurrent users
+---
 
-- **NFR-002 (Security):**  
-  Passwords must be hashed using Bcrypt with a minimum of 10 salt rounds
+- **NFR-001 — Performance**  
+  At least 95% of API responses must be served under `<200ms>` under `<100 concurrent users>`.
 
-- **NFR-003 (Scalability):**  
-  Application must support horizontal scaling using Docker containers
+- **NFR-002 — Security**  
+  Passwords must be hashed using Bcrypt with a minimum pattern: `<10+ salt rounds>`.
 
-- **NFR-004 (Availability):**  
-  Database must include health checks to detect connectivity issues
+- **NFR-003 — Scalability**  
+  System must support horizontal scaling using container orchestration.
 
-- **NFR-005 (Portability):**  
-  Entire stack must be deployable via `docker-compose up -d`
+- **NFR-004 — Availability**  
+  Database health checks must continuously verify connectivity state.
 
-- **NFR-006 (Usability):**  
-  UI must be responsive for mobile (<768px) and desktop screens
+- **NFR-005 — Portability**  
+  Full platform deployable via:
+  ```
+  docker-compose up -d
+  ```
+
+- **NFR-006 — Usability**  
+  UI must support responsive design for:
+  - Mobile (pattern: `<480px – 768px>`)
+  - Desktop (pattern: `<≥1024px>`)
+
+---
