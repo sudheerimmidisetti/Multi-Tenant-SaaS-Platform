@@ -6,24 +6,33 @@ async function main() {
   console.log('🚀 Starting Database Seeding...');
 
   // ------------------------------------
-  // 1️⃣ SUPER ADMIN  (No Tenant)
+  // 1️⃣ SUPER ADMIN (tenantId = null)
   // ------------------------------------
   const superAdminEmail = 'superadmin@system.com';
   const superAdminHash = await bcrypt.hash('Admin@123', 10);
 
-  await prisma.user.upsert({
-    where: { email: superAdminEmail },
-    update: {},
-    create: {
+  const superAdminExists = await prisma.user.findFirst({
+    where: {
       email: superAdminEmail,
-      passwordHash: superAdminHash,
-      fullName: 'System Super Admin',
-      role: 'super_admin',
       tenantId: null
     }
   });
 
-  console.log('✔ Super Admin Ready');
+  if (!superAdminExists) {
+    await prisma.user.create({
+      data: {
+        email: superAdminEmail,
+        passwordHash: superAdminHash,
+        fullName: 'System Super Admin',
+        role: 'super_admin',
+        tenantId: null
+      }
+    });
+
+    console.log('✔ Super Admin Created');
+  } else {
+    console.log('✔ Super Admin Already Exists');
+  }
 
   // ------------------------------------
   // 2️⃣ DEMO TENANT
