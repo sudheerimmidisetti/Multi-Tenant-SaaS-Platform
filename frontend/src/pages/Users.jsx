@@ -9,13 +9,13 @@ const Users = () => {
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
-  
+
   // Form State
-  const [newUser, setNewUser] = useState({ 
-    email: '', 
-    password: '', 
-    fullName: '', 
-    role: 'user' 
+  const [newUser, setNewUser] = useState({
+    email: '',
+    password: '',
+    fullName: '',
+    role: 'user'
   });
 
   // Fetch Users
@@ -73,41 +73,41 @@ const Users = () => {
         <button className="btn-primary" onClick={() => setShowModal(true)}>+ Add Member</button>
       </div>
 
-      <div className="users-list" style={{background: 'white', borderRadius: '8px', boxShadow: '0 2px 5px rgba(0,0,0,0.1)'}}>
+      <div className="users-list" style={{ background: 'white', borderRadius: '8px', boxShadow: '0 2px 5px rgba(0,0,0,0.1)' }}>
         <table className="data-table">
-            <thead>
-                <tr>
-                    <th>Name</th>
-                    <th>Email</th>
-                    <th>Role</th>
-                    <th>Status</th>
-                    <th>Actions</th>
-                </tr>
-            </thead>
-            <tbody>
-                {users.map((member) => (
-                    <tr key={member.id}>
-                        <td>{member.fullName}</td>
-                        <td>{member.email}</td>
-                        <td>
-                            <span className={`status-badge ${member.role === 'tenant_admin' ? 'active' : 'completed'}`}>
-                                {member.role.replace('_', ' ')}
-                            </span>
-                        </td>
-                        <td>{member.isActive ? 'Active' : 'Inactive'}</td>
-                        <td>
-                            {member.id !== user.userId && member.id !== user.id && (
-                                <button 
-                                    onClick={() => handleDeleteUser(member.id)}
-                                    style={{background: '#dc3545', color: 'white', border: 'none', padding: '5px 10px', borderRadius: '4px', cursor: 'pointer'}}
-                                >
-                                    Remove
-                                </button>
-                            )}
-                        </td>
-                    </tr>
-                ))}
-            </tbody>
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>Email</th>
+              <th>Role</th>
+              <th>Status</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {users.map((member) => (
+              <tr key={member.id}>
+                <td>{member.fullName}</td>
+                <td>{member.email}</td>
+                <td>
+                  <span className={`status-badge ${member.role === 'tenant_admin' ? 'active' : 'completed'}`}>
+                    {member.role.replace('_', ' ')}
+                  </span>
+                </td>
+                <td>{member.isActive ? 'Active' : 'Inactive'}</td>
+                <td>
+                  {member.id !== user.userId && member.id !== user.id && (
+                    <button
+                      onClick={() => handleDeleteUser(member.id)}
+                      style={{ background: '#dc3545', color: 'white', border: 'none', padding: '5px 10px', borderRadius: '4px', cursor: 'pointer' }}
+                    >
+                      Remove
+                    </button>
+                  )}
+                </td>
+              </tr>
+            ))}
+          </tbody>
         </table>
       </div>
 
@@ -117,29 +117,29 @@ const Users = () => {
           <div className="modal-content">
             <h3>Add New Team Member</h3>
             <form onSubmit={handleCreateUser}>
-              <input 
-                placeholder="Full Name" 
-                value={newUser.fullName} 
-                onChange={(e) => setNewUser({...newUser, fullName: e.target.value})} 
-                required 
+              <input
+                placeholder="Full Name"
+                value={newUser.fullName}
+                onChange={(e) => setNewUser({ ...newUser, fullName: e.target.value })}
+                required
               />
-              <input 
+              <input
                 type="email"
-                placeholder="Email Address" 
-                value={newUser.email} 
-                onChange={(e) => setNewUser({...newUser, email: e.target.value})} 
-                required 
+                placeholder="Email Address"
+                value={newUser.email}
+                onChange={(e) => setNewUser({ ...newUser, email: e.target.value })}
+                required
               />
-              <input 
+              <input
                 type="password"
-                placeholder="Default Password" 
-                value={newUser.password} 
-                onChange={(e) => setNewUser({...newUser, password: e.target.value})} 
-                required 
+                placeholder="Default Password"
+                value={newUser.password}
+                onChange={(e) => setNewUser({ ...newUser, password: e.target.value })}
+                required
               />
-              <select 
-                value={newUser.role} 
-                onChange={(e) => setNewUser({...newUser, role: e.target.value})}
+              <select
+                value={newUser.role}
+                onChange={(e) => setNewUser({ ...newUser, role: e.target.value })}
               >
                 <option value="user">Standard User</option>
                 <option value="tenant_admin">Admin</option>

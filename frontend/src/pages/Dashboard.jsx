@@ -5,7 +5,7 @@ import './Dashboard.css';
 
 const Dashboard = () => {
   const { user } = useContext(AuthContext);
-  
+
   // Unified stats state
   const [stats, setStats] = useState({
     totalProjects: 0,
@@ -77,7 +77,7 @@ const Dashboard = () => {
 
   return (
     <div className="dashboard-container">
-      <h2>Welcome, {user.fullName}!</h2>
+      <h2>Welcome Administrator!</h2>
       <p className="role-badge">Role: {user.role}</p>
 
       {/* --- SUPER ADMIN VIEW --- */}
@@ -93,14 +93,14 @@ const Dashboard = () => {
               <h3>Total Projects</h3>
               <p className="stat-number">{stats.totalProjects}</p>
             </div>
-             {/* Placeholders to keep grid layout */}
-            <div className="stat-card" style={{opacity: 0.5}}>
+            {/* Placeholders to keep grid layout */}
+            <div className="stat-card" style={{ opacity: 0.5 }}>
               <h3>System Health</h3>
-              <p className="stat-number" style={{fontSize: '1.2rem'}}>Good</p>
+              <p className="stat-number" style={{ fontSize: '1.2rem' }}>Good</p>
             </div>
-            <div className="stat-card" style={{opacity: 0.5}}>
+            <div className="stat-card" style={{ opacity: 0.5 }}>
               <h3>Active Users</h3>
-              <p className="stat-number" style={{fontSize: '1.2rem'}}>--</p>
+              <p className="stat-number" style={{ fontSize: '1.2rem' }}>--</p>
             </div>
           </div>
 
