@@ -176,7 +176,7 @@ Password: Admin@123
 ### Tenant Admin
 ```
 Email: admin@demo.com
-Password: Admin@123
+Password: Demo@123
 Subdomain: demo
 ```
 
